@@ -16,12 +16,35 @@ export async function POST(req: Request) {
             );
         }
 
+        const normalizedDate = new Date(date);
+
+        // 🔥 CHECK DUPLICATE BEFORE INSERT
+        const existingExpense = await prisma.expense.findFirst({
+            where: {
+                amount: Number(amount),
+                category,
+                description: description || null,
+                date: normalizedDate,
+            },
+        });
+
+        if (existingExpense) {
+            return NextResponse.json(
+                {
+                    message: "Duplicate expense ignored",
+                    expense: existingExpense,
+                },
+                { status: 200 }
+            );
+        }
+
+        // CREATE NEW
         const expense = await prisma.expense.create({
             data: {
                 amount: Number(amount),
                 category,
                 description,
-                date: new Date(date),
+                date: normalizedDate,
             },
         });
 
@@ -36,18 +59,16 @@ export async function POST(req: Request) {
 
 // GET /api/expenses
 export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
 
-    const category = searchParams.get("category");
-    const sort = searchParams.get("sort");
+    const { searchParams } = new URL(req.url)
+
+    const category = searchParams.get("category")
+    const sort = searchParams.get("sort")
 
     const expenses = await prisma.expense.findMany({
         where: category ? { category } : {},
-        orderBy:
-            sort === "date_desc"
-                ? { date: "desc" }
-                : { created_at: "desc" },
-    });
+        orderBy: sort === "date_desc" ? { date: "desc" } : undefined
+    })
 
-    return NextResponse.json(expenses);
+    return NextResponse.json(expenses)
 }

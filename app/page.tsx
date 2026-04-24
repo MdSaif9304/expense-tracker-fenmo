@@ -17,38 +17,71 @@ type Expense = {
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (selectedCategory?: string) => {
     try {
-      const res = await api.get("/expenses?sort=date_desc");
+      setLoading(true);
+
+      let url = "/expenses?sort=date_desc";
+
+      if (selectedCategory) {
+        url += `&category=${selectedCategory}`;
+      }
+
+      const res = await api.get(url);
       setExpenses(res.data);
     } catch (error) {
       console.error("Failed to fetch expenses", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    fetchExpenses(category);
+  }, [category]);
 
   return (
     <>
       <Header />
+
       <main className="max-w-5xl mx-auto p-6">
-        {/* Add Expense Section */}
+        {/* Add Expense */}
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-4">Add New Expense</h2>
 
-          <ExpenseForm onExpenseAdded={fetchExpenses} />
+          <ExpenseForm onExpenseAdded={() => fetchExpenses(category)} />
         </section>
 
-        {/* Expense List Section */}
+        {/* Expense List */}
         <section>
-          <h2 className="text-2xl font-semibold mb-4">Expense List</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">Expense List</h2>
 
-          <ExpenseList expenses={expenses} />
+            {/* Filter */}
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="border p-2 rounded-md dark:bg-gray-800"
+            >
+              <option value="">All Categories</option>
+              <option value="Food">Food</option>
+              <option value="Drinks">Drinks</option>
+              <option value="Travel">Travel</option>
+              <option value="Shopping">Shopping</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <p className="mt-6 text-gray-500">Loading expenses...</p>
+          ) : (
+            <ExpenseList expenses={expenses} />
+          )}
         </section>
       </main>
+
       <Footer />
     </>
   );
