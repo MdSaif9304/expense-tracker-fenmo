@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../lib/axios";
 import { v4 as uuidv4 } from "uuid";
 
-export default function ExpenseForm({ onExpenseAdded }: any) {
+export default function ExpenseForm({
+  onExpenseAdded,
+  editingExpense,
+  setEditingExpense,
+}: any) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -14,18 +18,32 @@ export default function ExpenseForm({ onExpenseAdded }: any) {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    if (loading) return; // prevent double click
+    if (loading) return;
 
     setLoading(true);
 
     try {
-      await api.post("/expenses", {
-        amount: Number(amount),
-        category,
-        description,
-        date,
-        idempotencyKey: uuidv4(),
-      });
+      if (editingExpense) {
+        // UPDATE MODE
+        await api.put("/expenses", {
+          id: editingExpense.id,
+          amount: Number(amount),
+          category,
+          description,
+          date,
+        });
+
+        setEditingExpense(null);
+      } else {
+        // CREATE MODE
+        await api.post("/expenses", {
+          amount: Number(amount),
+          category,
+          description,
+          date,
+          idempotencyKey: uuidv4(),
+        });
+      }
 
       setAmount("");
       setCategory("");
@@ -39,10 +57,19 @@ export default function ExpenseForm({ onExpenseAdded }: any) {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (editingExpense) {
+      setAmount(String(editingExpense.amount));
+      setCategory(editingExpense.category);
+      setDescription(editingExpense.description || "");
+
+      setDate(editingExpense.date?.split("T")[0]);
+    }
+  }, [editingExpense]);
 
   return (
-   <div className="bg-white dark:bg-gray-800 text-black dark:text-white shadow-lg dark:shadow-xl rounded-lg p-3 sm:p-4 md:p-6">
-     <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-white dark:bg-gray-800 text-black dark:text-white shadow-lg dark:shadow-xl rounded-lg p-3 sm:p-4 md:p-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
             type="number"
@@ -96,9 +123,13 @@ focus:outline-none focus:ring-2 focus:ring-blue-500"
         <button
           type="submit"
           disabled={loading}
-         className="w-full sm:w-auto bg-blue-500 text-white px-4 py-3 rounded disabled:opacity-50"
+          className="w-full sm:w-auto bg-blue-500 text-white px-4 py-3 rounded disabled:opacity-50"
         >
-          {loading ? "Adding..." : "Add Expense"}
+          {loading
+            ? "Processing..."
+            : editingExpense
+              ? "Update Expense"
+              : "Add Expense"}
         </button>
       </form>
     </div>

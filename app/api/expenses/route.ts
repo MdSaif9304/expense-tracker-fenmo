@@ -72,3 +72,62 @@ export async function GET(req: Request) {
 
     return NextResponse.json(expenses)
 }
+
+// Edit /api/expenses
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+
+    const { id, amount, category, description, date } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "id is required" },
+        { status: 400 }
+      );
+    }
+
+    const updatedExpense = await prisma.expense.update({
+      where: { id },
+      data: {
+        amount: Number(amount),
+        category,
+        description,
+        date: new Date(date),
+      },
+    });
+
+    return NextResponse.json(updatedExpense);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update expense" },
+      { status: 500 }
+    );
+  }
+}
+
+// Delete /api/expenses
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "id is required" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.expense.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to delete expense" },
+      { status: 500 }
+    );
+  }
+}

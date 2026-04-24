@@ -19,6 +19,7 @@ export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const fetchExpenses = async (selectedCategory?: string) => {
     try {
@@ -43,6 +44,24 @@ export default function Home() {
     fetchExpenses(category);
   }, [category]);
 
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this expense?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/expenses?id=${id}`);
+      fetchExpenses(category);
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  };
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+  };
   return (
     <>
       <Header />
@@ -52,7 +71,11 @@ export default function Home() {
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-4">Add New Expense</h2>
 
-          <ExpenseForm onExpenseAdded={() => fetchExpenses(category)} />
+          <ExpenseForm
+            onExpenseAdded={() => fetchExpenses(category)}
+            editingExpense={editingExpense}
+            setEditingExpense={setEditingExpense}
+          />
         </section>
 
         {/* Expense List */}
@@ -77,7 +100,11 @@ export default function Home() {
           {loading ? (
             <p className="mt-6 text-gray-500">Loading expenses...</p>
           ) : (
-            <ExpenseList expenses={expenses} />
+            <ExpenseList
+              expenses={expenses}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           )}
         </section>
       </main>
