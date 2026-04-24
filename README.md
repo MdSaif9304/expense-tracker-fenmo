@@ -63,3 +63,15 @@ I implemented **idempotencyKey-based duplicate prevention**:
 - Single-user application
 - Expenses are not shared between users
 - Internet connection is generally available (with retry handling for failures)
+
+---
+
+## ✏️ Edit & Delete Features
+Users can edit existing expenses by clicking the edit icon in the table.
+Editing pre-fills the form with existing data for easy updates.
+Users can delete expenses with a confirmation prompt to prevent accidental deletion.
+Both actions update the UI instantly by refetching updated data from the backend.
+UX Enhancements:
+Edit mode clearly changes button label to “Update Expense”
+Delete action includes confirmation dialog (window.confirm)
+Icons used instead of text for better UX
